@@ -2,13 +2,14 @@ require("dotenv").config();
 import "reflect-metadata";
 import express from "express";
 import { createConnection } from "typeorm";
-import { User } from "./entities/User";
-import { Post } from "./entities/Post";
 import { ApolloServer } from "apollo-server-express";
 import { HelloResolver } from "./resolvers/hello";
 import { buildSchema } from "type-graphql";
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
+import { User } from "./entities/User";
+import { Post } from "./entities/Post";
 import { UserResolver } from "./resolvers/user";
+
 const main = async () => {
    await createConnection({
       type: "postgres",
