@@ -1,14 +1,20 @@
 require("dotenv").config();
-import "reflect-metadata";
-import express from "express";
-import { createConnection } from "typeorm";
-import { ApolloServer } from "apollo-server-express";
-import { HelloResolver } from "./resolvers/hello";
-import { buildSchema } from "type-graphql";
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
-import { User } from "./entities/User";
+import { ApolloServer } from "apollo-server-express";
+import express from "express";
+import session from "express-session";
+import "reflect-metadata";
+import { buildSchema } from "type-graphql";
+import { createConnection } from "typeorm";
 import { Post } from "./entities/Post";
+import { User } from "./entities/User";
+import { HelloResolver } from "./resolvers/hello";
 import { UserResolver } from "./resolvers/user";
+import { Context } from "./types/Context";
+import cors from "cors";
+import { COOKIE_NAME } from "./constants";
+import { PostResolver } from "./resolvers/post";
+const MongoDBStore = require("connect-mongodb-session")(session);
 
 const main = async () => {
    await createConnection({
@@ -21,11 +27,52 @@ const main = async () => {
       entities: [User, Post],
    });
    const app = express();
+
+   app.use(
+      cors({
+         credentials: true,
+         origin: [
+            "https://studio.apollographql.com",
+            "http://localhost:4000/graphql",
+         ],
+         methods: ["POST", "PUT", "GET", "OPTIONS", "HEAD"],
+      })
+   );
+   //Session/Cookie store
+   const mongoUrl = `mongodb://localhost:27017/learn-nextjs`;
+   const store = new MongoDBStore({
+      uri: mongoUrl,
+      collection: "mySessions",
+   });
+   store.on("error", (error: any) => {
+      console.log(error);
+   });
+   app.set("trust proxy", 1);
+   app.use(
+      session({
+         name: COOKIE_NAME,
+         store: store,
+         cookie: {
+            maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+            httpOnly: true,
+            sameSite: false,
+            secure: false,
+         },
+         secret: "This is a secret",
+         // Boilerplate options, see:
+         // * https://www.npmjs.com/package/express-session#resave
+         // * https://www.npmjs.com/package/express-session#saveuninitialized
+         saveUninitialized: false, // don't save empty sessions, right from the start
+         resave: false,
+      })
+   );
    const apolloServer = new ApolloServer({
       schema: await buildSchema({
-         resolvers: [HelloResolver, UserResolver],
+         resolvers: [HelloResolver, UserResolver, PostResolver],
          validate: false,
       }),
+      context: ({ req, res }): Context => ({ req, res }),
+
       plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
    });
    await apolloServer.start();
