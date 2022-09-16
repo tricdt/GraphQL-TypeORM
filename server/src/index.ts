@@ -34,6 +34,7 @@ const main = async () => {
          origin: [
             "https://studio.apollographql.com",
             "http://localhost:4000/graphql",
+            "http://localhost:3000",
          ],
          methods: ["POST", "PUT", "GET", "OPTIONS", "HEAD"],
       })
