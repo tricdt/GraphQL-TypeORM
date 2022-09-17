@@ -1,5 +1,5 @@
 import Register from "./register";
 
-const Index = () => <Register />;
+const Index = () => <h1>HELLO WORLD</h1>;
 
 export default Index;

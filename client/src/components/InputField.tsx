@@ -16,8 +16,8 @@ interface InputFieldProps {
 const InputField = (props: InputFieldProps) => {
    const [field, { error }] = useField(props);
    return (
-      <FormControl>
-         <FormLabel htmlFor={field.name}>{props.name}</FormLabel>
+      <FormControl isInvalid={!!error}>
+         <FormLabel htmlFor={field.name}>{props.label}</FormLabel>
          <Input {...field} id={field.name} {...props} />
          {error && <FormErrorMessage>{error}</FormErrorMessage>}
       </FormControl>
