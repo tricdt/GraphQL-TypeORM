@@ -5,6 +5,8 @@ import InputField from "../components/InputField";
 import Wrapper from "../components/Wrapper";
 import {
    LoginInput,
+   MeDocument,
+   MeQuery,
    RegisterInput,
    useLoginMutation,
 } from "../generated/graphql";
@@ -27,6 +29,15 @@ const Login = () => {
          variables: {
             loginInput: values,
          },
+         update: (cache, { data }) => {
+            console.log("DATA LOGIN", data);
+            if (data?.login.success) {
+               cache.writeQuery<MeQuery>({
+                  query: MeDocument,
+                  data: { me: data.login.user },
+               });
+            }
+         },
       });
       if (response.data?.login.errors) {
          setErrors(mapFieldErrors(response.data.login.errors));
@@ -39,7 +50,7 @@ const Login = () => {
       <Wrapper>
          {error && <p>Failed to register</p>}
          {data && data.login.success && (
-            <p>Registered successfully {JSON.stringify(data)}</p>
+            <p>Login successfully {JSON.stringify(data)}</p>
          )}
          <Formik initialValues={initialValues} onSubmit={onRegisterSubmit}>
             {({ isSubmitting }) => (
