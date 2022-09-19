@@ -1,4 +1,11 @@
-import { Box, Button, FormControl } from "@chakra-ui/react";
+import {
+   Box,
+   Button,
+   Flex,
+   FormControl,
+   Spinner,
+   useToast,
+} from "@chakra-ui/react";
 import { Form, Formik, FormikHelpers } from "formik";
 import { useRouter } from "next/router";
 import InputField from "../components/InputField";
@@ -11,8 +18,10 @@ import {
    useLoginMutation,
 } from "../generated/graphql";
 import { mapFieldErrors } from "../helpers/mapFieldErrors";
+import { useCheckAuth } from "../utils/useCheckAuth";
 const Login = () => {
    const router = useRouter();
+   const { data: authData, loading: authLoading } = useCheckAuth();
    const initialValues = {
       usernameOrEmail: "",
       password: "",
@@ -21,7 +30,9 @@ const Login = () => {
    const [loginUser, { loading: _registerUserLoading, data, error }] =
       useLoginMutation();
 
-   const onRegisterSubmit = async (
+   const toast = useToast();
+
+   const onLoginSubmit = async (
       values: LoginInput,
       { setErrors }: FormikHelpers<LoginInput>
    ) => {
@@ -32,6 +43,10 @@ const Login = () => {
          update: (cache, { data }) => {
             console.log("DATA LOGIN", data);
             if (data?.login.success) {
+               // const meData = cache.readQuery<MeQuery>({
+               //    query: MeDocument,
+               // });
+               // console.log("Me Data", meData);
                cache.writeQuery<MeQuery>({
                   query: MeDocument,
                   data: { me: data.login.user },
@@ -42,17 +57,30 @@ const Login = () => {
       if (response.data?.login.errors) {
          setErrors(mapFieldErrors(response.data.login.errors));
       } else if (response.data?.login.user) {
-         // register successfully
+         // login successfully
+         toast({
+            title: "Welcome",
+            description: `${response.data.login.user.username}`,
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+         });
          router.push("/");
       }
    };
+   if (authLoading || (!authLoading && authData?.me))
+      return (
+         <Flex justifyContent="center" alignItems="center" minH="100vh">
+            <Spinner />
+         </Flex>
+      );
    return (
       <Wrapper>
          {error && <p>Failed to register</p>}
          {data && data.login.success && (
             <p>Login successfully {JSON.stringify(data)}</p>
          )}
-         <Formik initialValues={initialValues} onSubmit={onRegisterSubmit}>
+         <Formik initialValues={initialValues} onSubmit={onLoginSubmit}>
             {({ isSubmitting }) => (
                <Form>
                   <FormControl>
