@@ -14,7 +14,9 @@ import { Context } from "./types/Context";
 import cors from "cors";
 import { COOKIE_NAME } from "./constants";
 import { PostResolver } from "./resolvers/post";
+import { sendEmail } from "./utils/sendEmail";
 const MongoDBStore = require("connect-mongodb-session")(session);
+import mongoose from "mongoose";
 
 const main = async () => {
    await createConnection({
@@ -26,6 +28,8 @@ const main = async () => {
       synchronize: true,
       entities: [User, Post],
    });
+
+   await sendEmail("tricdt@gmail.com", "<b>Hello Tri</b>");
    const app = express();
 
    app.use(
@@ -41,6 +45,9 @@ const main = async () => {
    );
    //Session/Cookie store
    const mongoUrl = `mongodb://localhost:27017/learn-nextjs`;
+   await mongoose.connect(mongoUrl, {});
+   console.log("MongoDB connected");
+
    const store = new MongoDBStore({
       uri: mongoUrl,
       collection: "mySessions",

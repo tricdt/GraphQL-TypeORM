@@ -8,6 +8,9 @@ import { Context } from "../types/Context";
 import { LoginInput } from "../types/LoginInput";
 
 import { COOKIE_NAME } from "../constants";
+import { ForgotPasswordInput } from "../types/ForgotPasswordInput";
+import { TokenModel } from "../models/Token";
+import { sendEmail } from "../utils/sendEmail";
 
 @Resolver()
 export class UserResolver {
@@ -141,5 +144,26 @@ export class UserResolver {
             resolve(true);
          });
       });
+   }
+
+   @Mutation((_return) => Boolean)
+   async forgotPassword(
+      @Arg("forgotPasswordInput") forgotPasswordInput: ForgotPasswordInput
+   ): Promise<boolean> {
+      const user = await User.findOneBy({ email: forgotPasswordInput.email });
+      console.log({ user });
+
+      if (!user) return true;
+      const token = "asdfasdhfljsglhsjfdg";
+
+      // save token to db
+      await new TokenModel({ userId: `${user.id}`, token }).save();
+
+      // send reset password link to user via email
+      await sendEmail(
+         forgotPasswordInput.email,
+         `<a href="http://localhost:3000/change-password?token=${token}">Click here to reset your password</a>`
+      );
+      return true;
    }
 }
