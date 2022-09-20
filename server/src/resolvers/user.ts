@@ -1,17 +1,17 @@
-import { User } from "../entities/User";
-import { Resolver, Mutation, Arg, Ctx, Query } from "type-graphql";
 import argon2 from "argon2";
-import { UserMutationResponse } from "../types/UserMutationResponse";
-import { RegisterInput } from "../types/RegisterInput";
-import { validateRegisterInput } from "../utils/validateRegisterInput";
+import { Arg, Ctx, Mutation, Query, Resolver } from "type-graphql";
+import { User } from "../entities/User";
 import { Context } from "../types/Context";
 import { LoginInput } from "../types/LoginInput";
+import { RegisterInput } from "../types/RegisterInput";
+import { UserMutationResponse } from "../types/UserMutationResponse";
+import { validateRegisterInput } from "../utils/validateRegisterInput";
 
 import { COOKIE_NAME } from "../constants";
-import { ForgotPasswordInput } from "../types/ForgotPasswordInput";
 import { TokenModel } from "../models/Token";
+import { ForgotPasswordInput } from "../types/ForgotPasswordInput";
 import { sendEmail } from "../utils/sendEmail";
-
+import { v4 as uuidv4 } from "uuid";
 @Resolver()
 export class UserResolver {
    @Query((_return) => User, { nullable: true })
@@ -154,15 +154,20 @@ export class UserResolver {
       console.log({ user });
 
       if (!user) return true;
-      const token = "asdfasdhfljsglhsjfdg";
+      await TokenModel.findOneAndDelete({ userId: `${user.id}` });
+      const resetToken = uuidv4();
+      const hashedResetToken = await argon2.hash(resetToken);
 
       // save token to db
-      await new TokenModel({ userId: `${user.id}`, token }).save();
+      await new TokenModel({
+         userId: `${user.id}`,
+         token: hashedResetToken,
+      }).save();
 
       // send reset password link to user via email
       await sendEmail(
          forgotPasswordInput.email,
-         `<a href="http://localhost:3000/change-password?token=${token}">Click here to reset your password</a>`
+         `<a href="http://localhost:3000/change-password?token=${resetToken}&userId=${user.id}">Click here to reset your password</a>`
       );
       return true;
    }
