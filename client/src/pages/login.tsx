@@ -75,7 +75,7 @@ const Login = () => {
          </Flex>
       );
    return (
-      <Wrapper>
+      <Wrapper size="small">
          {error && <p>Failed to register</p>}
          {data && data.login.success && (
             <p>Login successfully {JSON.stringify(data)}</p>
@@ -83,32 +83,30 @@ const Login = () => {
          <Formik initialValues={initialValues} onSubmit={onLoginSubmit}>
             {({ isSubmitting }) => (
                <Form>
-                  <FormControl>
+                  <InputField
+                     name="usernameOrEmail"
+                     placeholder="Username or Email"
+                     label="Username or Email"
+                     type="text"
+                  />
+
+                  <Box mt={4}>
                      <InputField
-                        name="usernameOrEmail"
-                        placeholder="Username or Email"
-                        label="Username or Email"
-                        type="text"
+                        name="password"
+                        placeholder="Password"
+                        label="Password"
+                        type="password"
                      />
+                  </Box>
 
-                     <Box mt={4}>
-                        <InputField
-                           name="password"
-                           placeholder="Password"
-                           label="Password"
-                           type="password"
-                        />
-                     </Box>
-
-                     <Button
-                        type="submit"
-                        colorScheme="teal"
-                        mt={4}
-                        isLoading={isSubmitting}
-                     >
-                        Login
-                     </Button>
-                  </FormControl>
+                  <Button
+                     type="submit"
+                     colorScheme="teal"
+                     mt={4}
+                     isLoading={isSubmitting}
+                  >
+                     Login
+                  </Button>
                </Form>
             )}
          </Formik>
