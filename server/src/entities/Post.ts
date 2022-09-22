@@ -5,7 +5,9 @@ import {
    PrimaryGeneratedColumn,
    Column,
    CreateDateColumn,
+   ManyToOne,
 } from "typeorm";
+import { User } from "./User";
 @ObjectType()
 @Entity()
 export class Post extends BaseEntity {
@@ -20,6 +22,14 @@ export class Post extends BaseEntity {
    @Field()
    @Column()
    text!: string;
+
+   @Field()
+   @Column()
+   userId!: number;
+
+   @Field((_type) => User)
+   @ManyToOne(() => User, (user) => user.posts)
+   user: User;
 
    @Field()
    @CreateDateColumn()

@@ -33,7 +33,7 @@ const Index = () => {
                               <Heading>{post.title}</Heading>
                            </Link>
                         </NextLink>
-                        {/* <Text>posted by {post.user.username}</Text> */}
+                        <Text>posted by {post.user.username}</Text>
                         <Flex align="center">
                            <Text mt={4}>{post.textSnippet}</Text>
                            <Box ml="auto">
