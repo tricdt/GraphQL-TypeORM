@@ -6,6 +6,7 @@ import {
    Column,
    CreateDateColumn,
    ManyToOne,
+   UpdateDateColumn,
 } from "typeorm";
 import { User } from "./User";
 @ObjectType()
@@ -32,10 +33,10 @@ export class Post extends BaseEntity {
    user: User;
 
    @Field()
-   @CreateDateColumn()
+   @CreateDateColumn({ type: "timestamptz" })
    createdAt: Date;
 
    @Field()
-   @CreateDateColumn()
+   @UpdateDateColumn({ type: "timestamptz" })
    updatedAt: Date;
 }
