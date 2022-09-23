@@ -43,7 +43,6 @@ function createApolloClient() {
                      keyArgs: false,
                      merge(existing, incoming) {
                         let paginatedPosts: Post[] = [];
-
                         if (existing && existing.paginatedPosts) {
                            paginatedPosts = paginatedPosts.concat(
                               existing.paginatedPosts
