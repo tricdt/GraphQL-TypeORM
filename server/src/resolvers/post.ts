@@ -1,5 +1,6 @@
 import {
    Arg,
+   Ctx,
    FieldResolver,
    ID,
    Int,
@@ -13,6 +14,7 @@ import { LessThan } from "typeorm";
 import { Post } from "../entities/Post";
 import { User } from "../entities/User";
 import { checkAuth } from "../middleware/checkAuth";
+import { Context } from "../types/Context";
 import { CreatePostInput } from "../types/CreatePostInput";
 import { PaginatedPosts } from "../types/PaginatedPosts";
 import { PostMutationResponse } from "../types/PostMutationResponse";
@@ -33,12 +35,14 @@ export class PostResolver {
    @Mutation((_return) => PostMutationResponse)
    @UseMiddleware(checkAuth)
    async createPost(
-      @Arg("createPostInput") { title, text }: CreatePostInput
+      @Arg("createPostInput") { title, text }: CreatePostInput,
+      @Ctx() { req }: Context
    ): Promise<PostMutationResponse> {
       try {
          const newPost = Post.create({
             title,
             text,
+            userId: req.session.userId,
          });
          await newPost.save();
 
@@ -111,7 +115,8 @@ export class PostResolver {
    @Mutation((_return) => PostMutationResponse)
    @UseMiddleware(checkAuth)
    async updatePost(
-      @Arg("updatePostInput") { id, title, text }: UpdatePostInput
+      @Arg("updatePostInput") { id, title, text }: UpdatePostInput,
+      @Ctx() { req }: Context
    ): Promise<PostMutationResponse> {
       const existingPost = await Post.findOneBy({ id });
       if (!existingPost)
@@ -120,6 +125,13 @@ export class PostResolver {
             success: false,
             message: "Post not found",
          };
+      if (existingPost.userId != req.session.userId) {
+         return {
+            code: 401,
+            success: false,
+            message: "Unauthorized",
+         };
+      }
       existingPost.title = title;
       existingPost.text = text;
       await existingPost.save();
@@ -134,7 +146,8 @@ export class PostResolver {
    @Mutation((_return) => PostMutationResponse)
    @UseMiddleware(checkAuth)
    async deletePost(
-      @Arg("id", (_type) => ID) id: number
+      @Arg("id", (_type) => ID) id: number,
+      @Ctx() { req }: Context
    ): Promise<PostMutationResponse> {
       const existingPost = await Post.findOneBy({ id });
       if (!existingPost)
@@ -143,6 +156,13 @@ export class PostResolver {
             success: false,
             message: "Post not found",
          };
+      if (existingPost.userId !== req.session.userId) {
+         return {
+            code: 401,
+            success: false,
+            message: "Unauthorized",
+         };
+      }
       await Post.delete({ id });
       return {
          code: 200,

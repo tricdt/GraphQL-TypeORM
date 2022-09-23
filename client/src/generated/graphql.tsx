@@ -95,6 +95,14 @@ export type MutationUpdatePostArgs = {
   updatePostInput: UpdatePostInput;
 };
 
+export type PaginatedPosts = {
+  __typename?: 'PaginatedPosts';
+  cursor: Scalars['DateTime'];
+  hasMore: Scalars['Boolean'];
+  paginatedPosts: Array<Post>;
+  totalCount: Scalars['Float'];
+};
+
 export type Post = {
   __typename?: 'Post';
   createdAt: Scalars['DateTime'];
@@ -121,12 +129,18 @@ export type Query = {
   hello: Scalars['String'];
   me?: Maybe<User>;
   post?: Maybe<Post>;
-  posts?: Maybe<Array<Post>>;
+  posts?: Maybe<PaginatedPosts>;
 };
 
 
 export type QueryPostArgs = {
   id: Scalars['ID'];
+};
+
+
+export type QueryPostsArgs = {
+  cursor?: InputMaybe<Scalars['String']>;
+  limit: Scalars['Int'];
 };
 
 export type RegisterInput = {
@@ -161,7 +175,13 @@ export type UserMutationResponse = IMutationResponse & {
 
 export type FieldErrorFragment = { __typename?: 'FieldError', field: string, message: string };
 
-export type MutationStatusesFragment = { __typename?: 'UserMutationResponse', code: number, success: boolean, message?: string | null };
+export type UserMutationStatusesFragment = { __typename?: 'UserMutationResponse', code: number, success: boolean, message?: string | null };
+
+export type PostMutationStatusesFragment = { __typename?: 'PostMutationResponse', code: number, success: boolean, message?: string | null };
+
+export type PostMutationResponseFragment = { __typename?: 'PostMutationResponse', code: number, success: boolean, message?: string | null, post?: { __typename?: 'Post', id: string, title: string, text: string, createdAt: any, updatedAt: any, textSnippet: string, user: { __typename?: 'User', id: string, username: string } } | null, errors?: Array<{ __typename?: 'FieldError', field: string, message: string }> | null };
+
+export type PostWithUserInfoFragment = { __typename?: 'Post', id: string, title: string, text: string, createdAt: any, updatedAt: any, textSnippet: string, user: { __typename?: 'User', id: string, username: string } };
 
 export type UserInfoFragment = { __typename?: 'User', id: string, username: string, email: string };
 
@@ -207,13 +227,56 @@ export type MeQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type MeQuery = { __typename?: 'Query', me?: { __typename?: 'User', id: string, username: string, email: string } | null };
 
-export type PostsQueryVariables = Exact<{ [key: string]: never; }>;
+export type PostsQueryVariables = Exact<{
+  limit: Scalars['Int'];
+  cursor?: InputMaybe<Scalars['String']>;
+}>;
 
 
-export type PostsQuery = { __typename?: 'Query', posts?: Array<{ __typename?: 'Post', id: string, text: string, title: string, createdAt: any, updatedAt: any, textSnippet: string, user: { __typename?: 'User', username: string } }> | null };
+export type PostsQuery = { __typename?: 'Query', posts?: { __typename?: 'PaginatedPosts', totalCount: number, cursor: any, hasMore: boolean, paginatedPosts: Array<{ __typename?: 'Post', id: string, title: string, text: string, createdAt: any, updatedAt: any, textSnippet: string, user: { __typename?: 'User', id: string, username: string } }> } | null };
 
-export const MutationStatusesFragmentDoc = gql`
-    fragment mutationStatuses on UserMutationResponse {
+export const PostMutationStatusesFragmentDoc = gql`
+    fragment postMutationStatuses on PostMutationResponse {
+  code
+  success
+  message
+}
+    `;
+export const PostWithUserInfoFragmentDoc = gql`
+    fragment postWithUserInfo on Post {
+  id
+  title
+  text
+  createdAt
+  updatedAt
+  textSnippet
+  user {
+    id
+    username
+  }
+}
+    `;
+export const FieldErrorFragmentDoc = gql`
+    fragment fieldError on FieldError {
+  field
+  message
+}
+    `;
+export const PostMutationResponseFragmentDoc = gql`
+    fragment postMutationResponse on PostMutationResponse {
+  ...postMutationStatuses
+  post {
+    ...postWithUserInfo
+  }
+  errors {
+    ...fieldError
+  }
+}
+    ${PostMutationStatusesFragmentDoc}
+${PostWithUserInfoFragmentDoc}
+${FieldErrorFragmentDoc}`;
+export const UserMutationStatusesFragmentDoc = gql`
+    fragment userMutationStatuses on UserMutationResponse {
   code
   success
   message
@@ -226,15 +289,9 @@ export const UserInfoFragmentDoc = gql`
   email
 }
     `;
-export const FieldErrorFragmentDoc = gql`
-    fragment fieldError on FieldError {
-  field
-  message
-}
-    `;
 export const UserMutationResponseFragmentDoc = gql`
     fragment userMutationResponse on UserMutationResponse {
-  ...mutationStatuses
+  ...userMutationStatuses
   user {
     ...userInfo
   }
@@ -242,7 +299,7 @@ export const UserMutationResponseFragmentDoc = gql`
     ...fieldError
   }
 }
-    ${MutationStatusesFragmentDoc}
+    ${UserMutationStatusesFragmentDoc}
 ${UserInfoFragmentDoc}
 ${FieldErrorFragmentDoc}`;
 export const ChangePasswordDocument = gql`
@@ -446,20 +503,17 @@ export type MeQueryHookResult = ReturnType<typeof useMeQuery>;
 export type MeLazyQueryHookResult = ReturnType<typeof useMeLazyQuery>;
 export type MeQueryResult = Apollo.QueryResult<MeQuery, MeQueryVariables>;
 export const PostsDocument = gql`
-    query Posts {
-  posts {
-    id
-    text
-    title
-    createdAt
-    updatedAt
-    textSnippet
-    user {
-      username
+    query Posts($limit: Int!, $cursor: String) {
+  posts(limit: $limit, cursor: $cursor) {
+    totalCount
+    cursor
+    hasMore
+    paginatedPosts {
+      ...postWithUserInfo
     }
   }
 }
-    `;
+    ${PostWithUserInfoFragmentDoc}`;
 
 /**
  * __usePostsQuery__
@@ -473,10 +527,12 @@ export const PostsDocument = gql`
  * @example
  * const { data, loading, error } = usePostsQuery({
  *   variables: {
+ *      limit: // value for 'limit'
+ *      cursor: // value for 'cursor'
  *   },
  * });
  */
-export function usePostsQuery(baseOptions?: Apollo.QueryHookOptions<PostsQuery, PostsQueryVariables>) {
+export function usePostsQuery(baseOptions: Apollo.QueryHookOptions<PostsQuery, PostsQueryVariables>) {
         const options = {...defaultOptions, ...baseOptions}
         return Apollo.useQuery<PostsQuery, PostsQueryVariables>(PostsDocument, options);
       }
