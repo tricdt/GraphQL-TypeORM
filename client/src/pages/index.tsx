@@ -47,7 +47,7 @@ const Index = () => {
                         <Flex align="center">
                            <Text mt={4}>{post.textSnippet}</Text>
                            <Box ml="auto">
-                              <PostEditDeleteButtons />
+                              <PostEditDeleteButtons postId={post.id} />
                            </Box>
                         </Flex>
                      </Box>
