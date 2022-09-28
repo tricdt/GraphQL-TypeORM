@@ -40,7 +40,7 @@ const PostEdit = () => {
       router.back();
    };
 
-   if (meLoading || postLoading)
+   if (meLoading || postLoading) {
       return (
          <Layout>
             <Flex justifyContent="center" alignItems="center" minH="100vh">
@@ -48,7 +48,8 @@ const PostEdit = () => {
             </Flex>
          </Layout>
       );
-   if (!postData?.post)
+   }
+   if (!postData?.post) {
       return (
          <Layout>
             <Alert status="error">
@@ -62,6 +63,7 @@ const PostEdit = () => {
             </Box>
          </Layout>
       );
+   }
    if (
       !meLoading &&
       !postLoading &&
@@ -85,6 +87,7 @@ const PostEdit = () => {
       title: postData.post.title,
       text: postData.post.text,
    };
+
    return (
       <Layout>
          <Formik initialValues={initialValues} onSubmit={onUpdatePostSubmit}>

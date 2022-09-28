@@ -1,11 +1,55 @@
 import { Box, IconButton } from "@chakra-ui/react";
 import { DeleteIcon, EditIcon } from "@chakra-ui/icons";
 import NextLink from "next/link";
+import {
+   PaginatedPosts,
+   useDeletePostMutation,
+   useMeQuery,
+} from "../generated/graphql";
+import { Reference } from "@apollo/client";
 
 interface PostEditDeleteButtonsProps {
    postId: string;
+   postUserId: string;
 }
-const PostEditDeleteButtons = ({ postId }: PostEditDeleteButtonsProps) => {
+const PostEditDeleteButtons = ({
+   postId,
+   postUserId,
+}: PostEditDeleteButtonsProps) => {
+   const { data: meData } = useMeQuery();
+   const [deletePost, _] = useDeletePostMutation();
+
+   const onPostDelete = async (postId: string) => {
+      await deletePost({
+         variables: { id: postId },
+         update(cache, { data }) {
+            if (data?.deletePost.success) {
+               cache.modify({
+                  fields: {
+                     posts(
+                        existing: Pick<
+                           PaginatedPosts,
+                           "__typename" | "cursor" | "hasMore" | "totalCount"
+                        > & { paginatedPosts: Reference[] }
+                     ) {
+                        const newPostsAfterDeletion = {
+                           ...existing,
+                           totalCount: existing.totalCount - 1,
+                           paginatedPosts: existing.paginatedPosts.filter(
+                              (postRefObject) =>
+                                 postRefObject.__ref !== `Post:${postId}`
+                           ),
+                        };
+
+                        return newPostsAfterDeletion;
+                     },
+                  },
+               });
+            }
+         },
+      });
+   };
+   if (meData?.me?.id !== postUserId) return null;
    return (
       <Box>
          <NextLink href={`/post/edit/${postId}`}>
@@ -15,6 +59,7 @@ const PostEditDeleteButtons = ({ postId }: PostEditDeleteButtonsProps) => {
             icon={<DeleteIcon />}
             aria-label="delete"
             colorScheme="red"
+            onClick={onPostDelete.bind(this, postId)}
          />
       </Box>
    );

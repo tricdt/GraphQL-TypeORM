@@ -1,22 +1,22 @@
 require("dotenv").config();
 import { ApolloServerPluginLandingPageGraphQLPlayground } from "apollo-server-core";
 import { ApolloServer } from "apollo-server-express";
+import cors from "cors";
 import express from "express";
 import session from "express-session";
+import mongoose from "mongoose";
 import "reflect-metadata";
 import { buildSchema } from "type-graphql";
 import { createConnection } from "typeorm";
+import { COOKIE_NAME } from "./constants";
 import { Post } from "./entities/Post";
 import { User } from "./entities/User";
 import { HelloResolver } from "./resolvers/hello";
+import { PostResolver } from "./resolvers/post";
 import { UserResolver } from "./resolvers/user";
 import { Context } from "./types/Context";
-import cors from "cors";
-import { COOKIE_NAME } from "./constants";
-import { PostResolver } from "./resolvers/post";
 import { sendEmail } from "./utils/sendEmail";
 const MongoDBStore = require("connect-mongodb-session")(session);
-import mongoose from "mongoose";
 
 const main = async () => {
    await createConnection({
@@ -28,10 +28,8 @@ const main = async () => {
       synchronize: true,
       entities: [User, Post],
    });
-
-   await sendEmail("tricdt@gmail.com", "<b>Hello Tri</b>");
+   // await sendEmail("tricdt@gmail.com", "<b>Hello Tri</b>");
    const app = express();
-
    app.use(
       cors({
          credentials: true,
@@ -47,7 +45,6 @@ const main = async () => {
    const mongoUrl = `mongodb://localhost:27017/learn-nextjs`;
    await mongoose.connect(mongoUrl, {});
    console.log("MongoDB connected");
-
    const store = new MongoDBStore({
       uri: mongoUrl,
       collection: "mySessions",
@@ -80,7 +77,6 @@ const main = async () => {
          validate: false,
       }),
       context: ({ req, res }): Context => ({ req, res }),
-
       plugins: [ApolloServerPluginLandingPageGraphQLPlayground()],
    });
    await apolloServer.start();

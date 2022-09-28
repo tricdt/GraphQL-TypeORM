@@ -24,8 +24,9 @@ import { limit } from "../index";
 import PostEditDeleteButtons from "../../components/PostEditDeleteButtons";
 const Post = () => {
    const router = useRouter();
+   const postId = router.query.id as string;
    const { data, loading, error } = usePostQuery({
-      variables: { id: router.query.id as string },
+      variables: { id: postId },
    });
    if (loading)
       return (
@@ -58,7 +59,7 @@ const Post = () => {
          <Flex justifyContent="space-between" alignItems="center">
             <PostEditDeleteButtons
                postId={data.post.id}
-               // postUserId={data.post.userId.toString()}
+               postUserId={data.post.userId.toString()}
             />
             <NextLink href="/">
                <Button>Back to Homepage</Button>
